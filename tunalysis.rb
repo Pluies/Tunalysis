@@ -12,10 +12,10 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Seitunes.  If not, see <http://www.gnu.org/licenses/>.
+# along with Tunalysis.  If not, see <http://www.gnu.org/licenses/>.
 # ---------------------------------------------------------------------
 #
-# Tunalysis — Analyse your iTunes Library
+# Tunalysis - Analyse your iTunes Library
 #
 # Copyright 2010 Florent Delannoy
 
