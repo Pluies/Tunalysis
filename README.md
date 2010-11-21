@@ -18,7 +18,13 @@ And more to come!
 How does it work?
 =================
 
-Amazingly simply, of course.
+First, you have to install the 'plist' gem by running:
+
+	$ gem install plist
+
+(Depending on your setup, you might need admin rights to install gems.)
+
+Then it works amazingly simply:
 
 	$ ruby tunalysis.rb
 
