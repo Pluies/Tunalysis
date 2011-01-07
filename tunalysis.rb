@@ -78,10 +78,10 @@ def ms_to_hash milliseconds
 	hash = {}
 	hash[:days] = time/86400
 	remainder = time % 86400
-	hash[:hours] = time/3600
-	remainder = time % 3600
-	hash[:minutes] = time/60
-	remainder = time % 60
+	hash[:hours] = remainder/3600
+	remainder = remainder % 3600
+	hash[:minutes] = remainder/60
+	remainder = remainder % 60
 	hash[:seconds] = remainder
 	return hash
 end
