@@ -8,23 +8,22 @@ It uses [Bleything's plist](https://github.com/bleything/plist) to parse your XM
 * Total number of songs
 * Total number of playlists
 * Average song length
-* Average bitrate
+* Average/max/min bitrate
 * Average play count
 * Average skip count
 * Total time spent listening to music
+* Guesses favourite and less appreciated songs
 
 And more to come!
+
 
 How does it work?
 =================
 
-First, you have to install the 'plist' gem by running:
-
-	$ gem install plist
-
-(Depending on your setup, you might need admin rights to install gems.)
-
-Then it works amazingly simply:
+Why, amazingly simply of course:
 
 	$ ruby tunalysis.rb
+
+
+Bundler integration means the plist and colorize gem are included in the package.
 
