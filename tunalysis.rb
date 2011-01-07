@@ -20,14 +20,16 @@
 # Copyright 2010 Florent Delannoy
 
 require 'rubygems'
+require 'bundler/setup'
 require 'plist'
+require 'colorize'
 
 default_library_path = "/Users/" + `whoami`.chomp + "/Music/iTunes/iTunes Music Library.xml"
 
 if File.exist? default_library_path
 	library_path = default_library_path
 else
-	raise "No library file at default path. :("
+	raise "No library file at default path (#{default_library_path}). :("
 end
 
 library_size = File.size? library_path
@@ -45,43 +47,67 @@ puts "Parsing your library..."
 
 library = Plist::parse_xml(library_path)
 
-puts "--- Tunalysis report ---"
+puts "\n|   Tunalysis report   |\n\n"
 tracks = library["Tracks"]
-puts "#{tracks.count} songs"
-puts "#{library["Playlists"].count} playlists"
+puts "#{tracks.count} "+"songs".white
+puts "#{library["Playlists"].count} "+"playlists".white
 
-bitrate = length = playtime = playcount = skipcount = 0
+max_bitrate = bitrate = length = playtime = playcount = skipcount = 0
+min_bitrate = (1/0.0) # i.e. infinity
 ranking = {}
 tracks.each do |key, song|
-	# Ranking algorithm
-	play = (song["Play Count"] or 0)
-	skip = (song["Skip Count"] or 0)
-	rank = play# 10 / ((skip * 5)+1)
-	ranking[key] = rank
+	play = song["Play Count"] = (song["Play Count"] or 0) # Initializes "Play count" to 0 if it doesn't exist
+	skip = song["Skip Count"] = (song["Skip Count"] or 0) # used for displaying the ranking
 	# Various calculations
 	length += song["Total Time"]
 	playtime += song["Total Time"] * play
 	bitrate += song["Bit Rate"]
+	max_bitrate = song["Bit Rate"] if song["Bit Rate"] > max_bitrate
+	min_bitrate = song["Bit Rate"] if song["Bit Rate"] < min_bitrate
 	playcount += play
 	skipcount += skip
+	# Ranking algorithm
+	rank = play**4 - skip**3
+	ranking[key] = rank
+	#p song["Name"]
+	#p rank
 end
 
-avg_length = length/tracks.count / 1000
-s = avg_length%60
-m = (avg_length-s)/60
-puts "Average song length: #{m}:%2d" % s
-puts "Average bitrate: #{bitrate/tracks.count}kbps (min kbps•max kbps)"
-puts "Average play count: %.2f" % (playcount.to_f/tracks.count)
-puts "Average skip count: %.2f" % (skipcount.to_f/tracks.count)
+def ms_to_hash milliseconds
+	time = milliseconds / 1000
+	hash = {}
+	hash[:days] = time/86400
+	remainder = time % 86400
+	hash[:hours] = time/3600
+	remainder = time % 3600
+	hash[:minutes] = time/60
+	remainder = time % 60
+	hash[:seconds] = remainder
+	return hash
+end
 
-playtime /= 1000
-d = playtime/86400
-remainder = playtime % 86400
-h = remainder/3600
-remainder = remainder % 3600
-m = remainder/60
-remainder = remainder % 60
-s = remainder
-puts "Total time spent listening to music: #{d} days, #{h} hours, #{m} minutes and #{s} seconds"
-puts "Ten songs you should delete according to my calculations: to come..."
+avg_length = ms_to_hash length/tracks.count
+puts "Average song length: ".white + "#{avg_length[:minutes]}:%2d" % avg_length[:seconds]
+puts "Average bitrate: ".white + "#{bitrate/tracks.count}kbps (min #{min_bitrate}kbps, max #{max_bitrate}kbps)"
+puts "Total songs played: ".white + "%d" % playcount
+puts "Total songs skipped: ".white + "%d" % skipcount
+puts "Average play count: ".white + "%.2f" % (playcount.to_f/tracks.count)
+puts "Average skip count: ".white + "%.2f" % (skipcount.to_f/tracks.count)
+
+playhash = ms_to_hash playtime
+puts "Total time spent listening to music: ".white + "#{playhash[:days]} days, #{playhash[:hours]} hours, #{playhash[:minutes]} minutes and #{playhash[:seconds]} seconds"
+
+def top_5 (library, ranking)
+	ranking.take(5).each do |key, rank|
+		song = library["Tracks"][key]
+		puts "#{song["Name"]} "+"by".white + " #{song["Artist"]}"+" (#{song["Play Count"]} plays, #{song["Skip Count"]} skips, computed score: #{rank})".white
+	end
+end
+
+ranking = ranking.sort_by{|key, rank| -rank}
+puts "\nYour five favourite songs according to my calculations:".green
+top_5 library, ranking
+puts "\nThe five songs that you might not like that much:".red
+top_5 library, ranking.reverse
+
 
