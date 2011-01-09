@@ -21,6 +21,7 @@
 
 require 'rubygems'
 require 'bundler/setup'
+require 'date'
 require 'plist'
 require 'colorize'
 
@@ -52,8 +53,8 @@ tracks = library["Tracks"]
 puts "#{tracks.count} "+"songs".white
 puts "#{library["Playlists"].count} "+"playlists".white
 
-max_bitrate = bitrate = length = playtime = playcount = skipcount = 0
-min_bitrate = (1/0.0) # i.e. infinity
+max_year = max_bitrate = year = year_count = bitrate = length = playtime = playcount = skipcount = 0
+min_year = min_bitrate = (1/0.0) # i.e. infinity
 ranking = {}
 tracks.each do |key, song|
 	play = song["Play Count"] = (song["Play Count"] or 0) # Initializes "Play count" to 0 if it doesn't exist
@@ -64,10 +65,16 @@ tracks.each do |key, song|
 	bitrate += song["Bit Rate"]
 	max_bitrate = song["Bit Rate"] if song["Bit Rate"] > max_bitrate
 	min_bitrate = song["Bit Rate"] if song["Bit Rate"] < min_bitrate
+	if song["Year"]
+		max_year = song["Year"] if song["Year"] > max_year
+		min_year = song["Year"] if song["Year"] < min_year
+		year += song["Year"]
+		year_count += 1
+	end
 	playcount += play
 	skipcount += skip
 	# Ranking algorithm
-	rank = play**4 - skip**3
+	rank = play**4 / (skip+1)**3 + (play**3 - skip**2)
 	ranking[key] = rank
 	#p song["Name"]
 	#p rank
@@ -93,6 +100,7 @@ puts "Total songs played: ".white + "%d" % playcount
 puts "Total songs skipped: ".white + "%d" % skipcount
 puts "Average play count: ".white + "%.2f" % (playcount.to_f/tracks.count)
 puts "Average skip count: ".white + "%.2f" % (skipcount.to_f/tracks.count)
+puts "Average song age: ".white + "%.0f years (oldest is from #{min_year}, newest is from #{max_year})" % (Date.today.year-(year/year_count))
 
 playhash = ms_to_hash playtime
 puts "Total time spent listening to music: ".white + "#{playhash[:days]} days, #{playhash[:hours]} hours, #{playhash[:minutes]} minutes and #{playhash[:seconds]} seconds"
