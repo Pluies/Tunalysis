@@ -60,8 +60,8 @@ tracks.each do |key, song|
 	play = song["Play Count"] = (song["Play Count"] or 0) # Initializes "Play count" to 0 if it doesn't exist
 	skip = song["Skip Count"] = (song["Skip Count"] or 0) # used for displaying the ranking
 	# Various calculations
-	length += song["Total Time"]
-	playtime += song["Total Time"] * play
+	length += song["Total Time"].to_i
+	playtime += song["Total Time"].to_i * play
 	bitrate += song["Bit Rate"]
 	max_bitrate = song["Bit Rate"] if song["Bit Rate"] > max_bitrate
 	min_bitrate = song["Bit Rate"] if song["Bit Rate"] < min_bitrate
