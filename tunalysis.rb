@@ -69,13 +69,12 @@ tracks = library["Tracks"]
 puts "#{tracks.count} "+"songs".white
 puts "#{library["Playlists"].count} "+"playlists".white
 
-max_year = max_bitrate = year = year_count = bitrate = length = playtime = playcount = skipcount = 0
-min_year = min_bitrate = (1/0.0) # i.e. infinity
+total_playtime = total_playcount = total_skipcount = 0
 ranking = {}
 counters = {}
 tracks.each do |key, song|
-	play = song["Play Count"] = (song["Play Count"] or 0) # Initializes "Play count" to 0 if it doesn't exist
-	skip = song["Skip Count"] = (song["Skip Count"] or 0) # used for displaying the ranking
+	playcount = song["Play Count"] = (song["Play Count"] or 0) # Initializes "Play count" to 0 if it doesn't exist
+	skipcount = song["Skip Count"] = (song["Skip Count"] or 0) # used for displaying the ranking
 	# Various calculations
 	for attr in ["Total Time", "Year", "Bit Rate"] do
 		if song[attr]
@@ -89,15 +88,13 @@ tracks.each do |key, song|
 			counters[attr].just_count song[attr]
 		end
 	end
-	playtime += song["Total Time"] * play
-	playcount += play
-	skipcount += skip
+	total_playtime += song["Total Time"].to_i * playcount
+	total_playcount += playcount
+	total_skipcount += skipcount
 	# Ranking algorithm
-	rank = play**2 * (DateTime.now - song["Date Added"]).to_f # plays per day
-#	rank *= skip * 1/(DateTime.now - song["Date Added"]).to_f
+	rank = 1.618 * playcount - skipcount # Can't go wrong with the golden ratio	
+	rank += rank / (0.1618 * (DateTime.now - song["Date Added"]).to_f) # per day modulation to help the youngest tracks
 	ranking[key] = rank
-	#p song["Name"]
-	#p rank
 end
 
 def ms_to_hash milliseconds
@@ -113,18 +110,18 @@ def ms_to_hash milliseconds
 	return hash
 end
 
-avg_length = ms_to_hash counters["Total Time"].sum/tracks.count
+avg_length = ms_to_hash counters["Total Time"].sum / tracks.count
 puts "Average song length: ".white + "#{avg_length[:minutes]}:%2d" % avg_length[:seconds]
 bitrate = counters["Bit Rate"]
 year = counters["Year"]
 puts "Average bitrate: ".white + "#{bitrate.sum/tracks.count}kbps (min #{bitrate.min}kbps, max #{bitrate.max}kbps)"
-puts "Total songs played: ".white + "%d" % playcount
-puts "Total songs skipped: ".white + "%d" % skipcount
-puts "Average play count: ".white + "%.2f" % (playcount.to_f/tracks.count)
-puts "Average skip count: ".white + "%.2f" % (skipcount.to_f/tracks.count)
+puts "Total songs played: ".white + "%d" % total_playcount
+puts "Total songs skipped: ".white + "%d" % total_skipcount
+puts "Average play count: ".white + "%.2f" % (total_playcount.to_f/tracks.count)
+puts "Average skip count: ".white + "%.2f" % (total_skipcount.to_f/tracks.count)
 puts "Average song age: ".white + "%.0f years (oldest is from #{year.min}, newest is from #{year.max})" % (Date.today.year-(year.sum/year.count))
 
-playhash = ms_to_hash playtime
+playhash = ms_to_hash total_playtime
 puts "Total time spent listening to music: ".white + "#{playhash[:days]} days, #{playhash[:hours]} hours, #{playhash[:minutes]} minutes and #{playhash[:seconds]} seconds"
 
 def top_5 (library, ranking)
